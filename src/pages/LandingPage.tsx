@@ -320,16 +320,6 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold text-white mb-4">Product</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Strategy Builder</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Backtesting</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Risk Management</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">AI Copilot</a></li>
-            </ul>
-          </div>
-
-          <div>
             <h4 className="font-semibold text-white mb-4">Learn</h4>
             <ul className="space-y-2 text-sm">
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Trading Courses</a></li>
