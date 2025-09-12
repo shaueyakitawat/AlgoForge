@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  BookOpen, 
   Play, 
   CheckCircle,
   Lock,
@@ -12,95 +11,253 @@ import {
   BarChart3,
   Users,
   Clock,
-  Award,
   Flame
 } from 'lucide-react';
 
+const courses = [
+  {
+    id: 1,
+    title: 'Stock Market Fundamentals',
+    instructor: 'Rajesh Kumar',
+    duration: '4 hours',
+    lessons: 20,
+    rating: 4.8,
+    reviews: 1234,
+    difficulty: 1,
+    description: 'Learn the fundamentals of stock market investing',
+    youtubePlaylist: 'https://www.youtube.com/playlist?list=PLxNHpNhDaEFJsuzKNrMbr_SESDCCLmSu4'
+  },
+  {
+    id: 2,
+    title: 'Technical Analysis for Everyone',
+    instructor: 'Priya Sharma',
+    duration: '6 hours',
+    lessons: 25,
+    rating: 4.9,
+    reviews: 856,
+    difficulty: 2,
+    description: 'Master chart patterns, indicators and technical analysis',
+    youtubePlaylist: 'https://www.youtube.com/playlist?list=PLxNHpNhDaEFKBbevR6wFc-4rMaFmd5tbc'
+  },
+  {
+    id: 3,
+    title: 'Options & Derivatives Made Easy',
+    instructor: 'Arjun Mehta',
+    duration: '8 hours',
+    lessons: 30,
+    rating: 4.7,
+    reviews: 642,
+    difficulty: 3,
+    description: 'Comprehensive guide to options trading strategies',
+    youtubePlaylist: 'https://www.youtube.com/playlist?list=PLxNHpNhDaEFJBMvkFSGxFCUzbKNa6DbGu'
+  },
+  {
+    id: 4,
+    title: 'Backtesting Without Coding',
+    instructor: 'Sneha Patel',
+    duration: '5 hours',
+    lessons: 18,
+    rating: 4.8,
+    reviews: 423,
+    difficulty: 2,
+    description: 'Learn to test and optimize your strategy easily and visually',
+    youtubePlaylist: 'https://www.youtube.com/playlist?list=PLxNHpNhDaEFKve2TjF8jUrQOKdj4tyl0U7'
+  },
+  {
+    id: 5,
+    title: 'Simple Risk Management',
+    instructor: 'Amit Trivedi',
+    duration: '3 hours',
+    lessons: 12,
+    rating: 4.6,
+    reviews: 201,
+    difficulty: 2,
+    description: 'Essential tools to protect your capital and manage risks',
+    youtubePlaylist: 'https://www.youtube.com/playlist?list=PLLy_2iUCG87CTB2vv9njHaJbmQoa9S5gK'
+  },
+  {
+    id: 6,
+    title: 'Algo Trading in Python (Reference)',
+    instructor: 'Vikram Gupta',
+    duration: '7 hours',
+    lessons: 28,
+    rating: 4.9,
+    reviews: 505,
+    difficulty: 3,
+    description: 'See how algos work under the hood (for reference only, no coding required).',
+    youtubePlaylist: 'https://www.youtube.com/playlist?list=PLUTKklmYVO37Ik8K1Ftdp4ULk3dMBCKYp'
+  }
+];
+
+const achievements = [
+  { name: 'First Strategy Builder', icon: Target, earned: true, date: '2024-01-15' },
+  { name: 'Technical Analysis Pro', icon: BarChart3, earned: true, date: '2024-01-10' },
+  { name: 'Quiz Master', icon: Trophy, earned: true, date: '2024-01-05' },
+  { name: 'Community Helper', icon: Users, earned: false, date: null },
+  { name: 'Options Expert', icon: Star, earned: false, date: null },
+  { name: 'Risk Management Pro', icon: Target, earned: false, date: null }
+];
+
+const leaderboard = [
+  { rank: 1, name: 'Priya_Trader', xp: 2850, courses: 5, avatar: 'PT' },
+  { rank: 2, name: 'TechAnalyst', xp: 2640, courses: 4, avatar: 'TA' },
+  { rank: 3, name: 'OptionsGuru', xp: 2420, courses: 4, avatar: 'OG' },
+  { rank: 4, name: 'You', xp: 1250, courses: 2, avatar: 'Y' },
+  { rank: 5, name: 'RiskMaster', xp: 1180, courses: 3, avatar: 'RM' }
+];
+
+const getDifficultyStars = (difficulty: number) => (
+  Array.from({ length: 5 }, (_, i) => (
+    <Star
+      key={i}
+      className={`h-3 w-3 ${
+        i < difficulty ? 'text-yellow-400 fill-current' : 'text-gray-300'
+      }`}
+    />
+  ))
+);
+
+// *** 15 questions for Stock Market Fundamentals; Template shown for others. ***
+const quizzes = {
+  1: {
+    title: "Stock Market Fundamentals Quiz",
+    questions: [
+      { question: "What is a stock?", options: ["A type of bond", "An ownership share in a company", "A money market instrument", "A form of bank account"], answer: 1 },
+      { question: "Stock represents ____ in a company.", options: ["Debt", "Ownership", "A contract", "A product"], answer: 1 },
+      { question: "Who regulates India's stock markets?", options: ["RBI", "SEBI", "NSE", "Sensex"], answer: 1 },
+      { question: "What is the BSE?", options: ["Banking Stock Exchange", "Bombay Stock Exchange", "Bond Stock Exchange", "British Stock Exchange"], answer: 1 },
+      { question: "Order to buy/sell at a specific price is called?", options: ["Stop Order", "Limit Order", "Market Order", "Future Order"], answer: 1 },
+      { question: "The ‘Sensex’ stands for:", options: ["Sensitive Index", "Sensible Exchange", "Sense Exchange", "Senior Index"], answer: 0 },
+      { question: "Which one is NOT a stock exchange?", options: ["NYSE", "NSE", "BSE", "IMF"], answer: 3 },
+      { question: "Dividends are paid to:", options: ["Bondholders", "Shareholders", "Employees", "Bankers"], answer: 1 },
+      { question: "Highest price a buyer is willing to pay is:", options: ["Bid", "Ask", "Spread", "Quote"], answer: 0 },
+      { question: "Mutual funds invest in:", options: ["Gold only", "Single stocks only", "Baskets of securities", "Bank deposits"], answer: 2 },
+      { question: "Demat account holds:", options: ["Physical shares", "Electronic shares", "Gold", "Cash"], answer: 1 },
+      { question: "Stock price mainly depends on:", options: ["Company age", "Supply & demand", "Book value", "Marketing"], answer: 1 },
+      { question: "Short selling means:", options: ["Buying at low", "Selling borrowed shares hoping to buy back lower", "Keeping stocks for long term", "First buying then selling"], answer: 1 },
+      { question: "Nifty 50 is:", options: ["Index of top 50 NSE stocks", "50 new IPOs", "50 mutual funds", "50 biggest US stocks"], answer: 0 },
+      { question: "The opening price is:", options: ["First traded price of the day", "Best price in pre-market", "Price at previous close", "Highest price of the week"], answer: 0 }
+    ]
+  },
+  2: {
+    title: "Technical Analysis for Everyone Quiz",
+    questions: [
+      // Add 15 questions here in same format!
+      { question: "What does RSI measure?", options: ["Price Momentum", "Trading Volume", "Market Cap", "Volatility"], answer: 0 },
+      // ... more
+    ]
+  },
+  3: {
+    title: "Options & Derivatives Made Easy Quiz",
+    questions: [
+      // 15 questions here...
+    ]
+  },
+  4: {
+    title: "Backtesting Without Coding Quiz",
+    questions: [
+      // 15 questions here...
+    ]
+  },
+  5: {
+    title: "Simple Risk Management Quiz",
+    questions: [
+      // 15 questions here...
+    ]
+  },
+  6: {
+    title: "Algo Trading in Python (Reference) Quiz",
+    questions: [
+      // 15 questions here...
+    ]
+  }
+};
+
 const LearningHubPage: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'courses' | 'achievements' | 'leaderboard'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'achievements' | 'leaderboard' | 'quiz'>('courses');
+  const [selectedQuizCourse, setSelectedQuizCourse] = useState<number | null>(null);
+  const [quizStep, setQuizStep] = useState(0);
+  const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
 
-  const courses = [
-    {
-      id: 1,
-      title: 'Stock Market Basics',
-      instructor: 'Rajesh Kumar',
-      duration: '4 hours',
-      lessons: 20,
-      rating: 4.8,
-      reviews: 1234,
-      completed: true,
-      progress: 100,
-      difficulty: 1,
-      description: 'Learn the fundamentals of stock market investing'
-    },
-    {
-      id: 2,
-      title: 'Technical Analysis Mastery',
-      instructor: 'Priya Sharma',
-      duration: '6 hours',
-      lessons: 25,
-      rating: 4.9,
-      reviews: 856,
-      completed: false,
-      progress: 60,
-      difficulty: 2,
-      description: 'Master chart patterns, indicators and technical analysis'
-    },
-    {
-      id: 3,
-      title: 'Options Trading Fundamentals',
-      instructor: 'Arjun Mehta',
-      duration: '8 hours',
-      lessons: 30,
-      rating: 4.7,
-      reviews: 642,
-      completed: false,
-      progress: 0,
-      difficulty: 3,
-      description: 'Comprehensive guide to options trading strategies'
-    },
-    {
-      id: 4,
-      title: 'Risk Management Essentials',
-      instructor: 'Sneha Patel',
-      duration: '5 hours',
-      lessons: 18,
-      rating: 4.8,
-      reviews: 423,
-      completed: false,
-      progress: 0,
-      difficulty: 2,
-      description: 'Learn to protect your capital and manage risk effectively'
+  React.useEffect(() => {
+    setSelectedQuizCourse(null);
+    setQuizStep(0);
+    setQuizAnswers([]);
+  }, [activeTab]);
+
+  const handleStartQuiz = (courseId: number) => {
+    setSelectedQuizCourse(courseId);
+    setQuizStep(0);
+    setQuizAnswers([]);
+  };
+
+  const handleAnswer = (idx: number) => {
+    setQuizAnswers([...quizAnswers, idx]);
+    setQuizStep(quizStep + 1);
+  };
+
+  const handleQuizRestart = () => {
+    setQuizStep(0);
+    setQuizAnswers([]);
+  };
+
+  const renderQuiz = () => {
+    if (selectedQuizCourse == null) return null;
+    const quiz = quizzes[selectedQuizCourse];
+    if (!quiz) return <div>No quiz available for this course.</div>;
+    const q = quiz.questions[quizStep];
+
+    // Quiz is finished
+    if (quizStep >= quiz.questions.length) {
+      const correct = quiz.questions.filter(
+        (q, i) => q.answer === quizAnswers[i]
+      ).length;
+      return (
+        <div className="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4">{quiz.title}</h2>
+          <p className="mb-2">Quiz complete! You scored <b>{correct}</b> out of <b>{quiz.questions.length}</b>.</p>
+          <p className="mb-6">Total Marks: <b>{correct * 1}</b></p>
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded mr-3"
+            onClick={handleQuizRestart}
+          >
+            Retake Quiz
+          </button>
+          <button
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
+            onClick={() => setSelectedQuizCourse(null)}
+          >
+            Back to Courses
+          </button>
+        </div>
+      );
     }
-  ];
 
-  const achievements = [
-    { name: 'First Strategy Builder', icon: Target, earned: true, date: '2024-01-15' },
-    { name: 'Technical Analysis Pro', icon: BarChart3, earned: true, date: '2024-01-10' },
-    { name: 'Quiz Master', icon: Trophy, earned: true, date: '2024-01-05' },
-    { name: 'Community Helper', icon: Users, earned: false, date: null },
-    { name: 'Options Expert', icon: Star, earned: false, date: null },
-    { name: 'Risk Management Pro', icon: Target, earned: false, date: null }
-  ];
-
-  const leaderboard = [
-    { rank: 1, name: 'Priya_Trader', xp: 2850, courses: 5, avatar: 'PT' },
-    { rank: 2, name: 'TechAnalyst', xp: 2640, courses: 4, avatar: 'TA' },
-    { rank: 3, name: 'OptionsGuru', xp: 2420, courses: 4, avatar: 'OG' },
-    { rank: 4, name: 'You', xp: user?.xp || 1250, courses: 2, avatar: user?.name.charAt(0).toUpperCase() || 'U' },
-    { rank: 5, name: 'RiskMaster', xp: 1180, courses: 3, avatar: 'RM' }
-  ];
-
-  const getDifficultyStars = (difficulty: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-3 w-3 ${
-          i < difficulty ? 'text-yellow-400 fill-current' : 'text-gray-300'
-        }`}
-      />
-    ));
+    return (
+      <div className="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6">
+        <h2 className="text-xl font-bold mb-4">{quiz.title}</h2>
+        <div className="mb-4"><span className="font-medium">Q{quizStep + 1}.</span> {q.question}</div>
+        <div>
+          {q.options.map((op, i) => (
+            <button
+              key={i}
+              className="block w-full text-left px-4 py-2 mb-2 bg-blue-50 hover:bg-blue-100 rounded transition"
+              onClick={() => handleAnswer(i)}
+            >
+              {op}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-between mt-6">
+          <span>Question {quizStep + 1} of {quiz.questions.length}</span>
+          <button
+            className="text-sm text-gray-600 hover:underline"
+            onClick={() => setSelectedQuizCourse(null)}
+          >Back to Courses</button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -111,7 +268,6 @@ const LearningHubPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Learning Hub</h1>
           <p className="text-gray-600">Enhance your trading skills with our comprehensive courses</p>
         </div>
-
         {/* Progress Overview */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white mb-8">
           <div className="flex items-center justify-between">
@@ -156,14 +312,14 @@ const LearningHubPage: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Tabs */}
         <div className="border-b border-gray-200 mb-6">
           <nav className="flex space-x-8">
             {[
               { id: 'courses', label: 'Courses', count: courses.length },
               { id: 'achievements', label: 'Achievements', count: achievements.filter(a => a.earned).length },
-              { id: 'leaderboard', label: 'Leaderboard', count: 0 }
+              { id: 'leaderboard', label: 'Leaderboard', count: 0 },
+              { id: 'quiz', label: 'Quiz', count: 0 }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -184,7 +340,6 @@ const LearningHubPage: React.FC = () => {
             ))}
           </nav>
         </div>
-
         {/* Courses Tab */}
         {activeTab === 'courses' && (
           <div className="space-y-6">
@@ -204,17 +359,7 @@ const LearningHubPage: React.FC = () => {
                         <span>{course.lessons} lessons</span>
                       </div>
                     </div>
-                    {course.completed ? (
-                      <CheckCircle className="h-6 w-6 text-green-500" />
-                    ) : course.progress > 0 ? (
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-blue-600">{course.progress}%</span>
-                      </div>
-                    ) : (
-                      <Lock className="h-6 w-6 text-gray-400" />
-                    )}
                   </div>
-
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <div className="flex items-center space-x-1">
@@ -228,55 +373,17 @@ const LearningHubPage: React.FC = () => {
                       <div className="flex">{getDifficultyStars(course.difficulty)}</div>
                     </div>
                   </div>
-
-                  {course.progress > 0 && (
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>Progress</span>
-                        <span>{course.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-500 h-2 rounded-full" 
-                          style={{ width: `${course.progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="flex items-center justify-between">
-                    <button
-                      disabled={!course.completed && course.progress === 0}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                        course.completed
-                          ? 'bg-green-50 text-green-600 hover:bg-green-100'
-                          : course.progress > 0
-                          ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                          : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                      }`}
+                    {/* The 'Start' button always available */}
+                    <a
+                      className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                      href={course.youtubePlaylist}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      {course.completed ? (
-                        <>
-                          <CheckCircle className="h-4 w-4" />
-                          <span>Completed</span>
-                        </>
-                      ) : course.progress > 0 ? (
-                        <>
-                          <Play className="h-4 w-4" />
-                          <span>Continue</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="h-4 w-4" />
-                          <span>Locked</span>
-                        </>
-                      )}
-                    </button>
-                    {course.completed && (
-                      <div className="text-sm text-gray-600">
-                        +{100 + course.lessons * 10} XP earned
-                      </div>
-                    )}
+                      <Play className="h-4 w-4" />
+                      <span>Start</span>
+                    </a>
                   </div>
                 </div>
               ))}
@@ -284,7 +391,7 @@ const LearningHubPage: React.FC = () => {
           </div>
         )}
 
-        {/* Achievements Tab */}
+        {/* Achievements Tab (original) */}
         {activeTab === 'achievements' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -319,12 +426,11 @@ const LearningHubPage: React.FC = () => {
           </div>
         )}
 
-        {/* Leaderboard Tab */}
+        {/* Leaderboard Tab (original) */}
         {activeTab === 'leaderboard' && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Learning Champions - This Week</h3>
-              
               <div className="space-y-4">
                 {leaderboard.map((user, index) => (
                   <div 
@@ -360,6 +466,31 @@ const LearningHubPage: React.FC = () => {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Quiz Tab */}
+        {activeTab === 'quiz' && (
+          <div className="space-y-6">
+            {!selectedQuizCourse ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courses.map(course => (
+                  <div key={course.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{course.title}</h3>
+                      <button
+                        className="mt-3 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                        onClick={() => handleStartQuiz(course.id)}
+                      >
+                        Take Quiz
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              renderQuiz()
+            )}
           </div>
         )}
       </div>
