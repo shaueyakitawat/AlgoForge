@@ -3,7 +3,6 @@ import express from "express";
 import yahooFinance from "yahoo-finance2";
 
 const router = express.Router();
-
 const cache = {
   data: null,
   timestamp: null,
