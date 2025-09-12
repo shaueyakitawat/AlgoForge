@@ -19,6 +19,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useData } from '../../contexts/DataContext';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -29,6 +30,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { isMarketOpen } = useData();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -81,8 +83,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <div className="flex items-center space-x-4">
             {/* Market Status */}
             <div className="hidden sm:flex items-center space-x-2 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-green-600 font-medium">Market Open</span>
+              <div className={`w-2 h-2 ${isMarketOpen ? 'bg-green-500' : 'bg-red-500'} rounded-full`}></div>
+              <span>{isMarketOpen ? 'Market Open' : 'Market Closed'}</span>
             </div>
 
             {/* Trading Mode Toggle */}

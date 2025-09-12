@@ -29,11 +29,19 @@ export interface IndexData {
   low: number;
 }
 
+export interface MarketBreadth {
+  advances: number;
+  declines: number;
+  unchanged: number;
+  ratio: number;
+}
+
 interface DataContextType {
   indices: IndexData[];
   topGainers: MarketData[];
   topLosers: MarketData[];
-  topStocks: MarketData[]; // merged gainers + losers
+  topStocks: MarketData[];
+  marketBreadth: MarketBreadth | null;
   isMarketOpen: boolean;
   lastUpdated: Date;
   loading: boolean;
@@ -45,87 +53,123 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const useData = () => {
   const context = useContext(DataContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useData must be used within a DataProvider");
   }
   return context;
 };
 
-// Check if Indian market is open
-const getIsMarketOpen = (): boolean => {
-  const now = new Date();
-  const day = now.getDay(); // Sunday = 0, Saturday = 6
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  const isWeekday = day >= 1 && day <= 5;
-  const isDuringMarketHours =
-    (hour > 9 || (hour === 9 && minute >= 15)) &&
-    (hour < 15 || (hour === 15 && minute < 30));
-  return isWeekday && isDuringMarketHours;
-};
-
-export const DataProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [indices, setIndices] = useState<IndexData[]>([]);
   const [topGainers, setTopGainers] = useState<MarketData[]>([]);
   const [topLosers, setTopLosers] = useState<MarketData[]>([]);
-  const [topStocks, setTopStocks] = useState<MarketData[]>([]); // merged
-  const [isMarketOpen, setIsMarketOpen] = useState(getIsMarketOpen());
+  const [topStocks, setTopStocks] = useState<MarketData[]>([]);
+  const [marketBreadth, setMarketBreadth] = useState<MarketBreadth | null>(null);
+  const [isMarketOpen, setIsMarketOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    console.log("Fetching all market data from proxy server...");
-    if (!indices.length) {
-      setLoading(true);
-    }
-    setError(null);
+  const updateData = (data: any) => {
+    setIndices(data.indices || []);
+    setTopGainers(data.topGainers || []);
+    setTopLosers(data.topLosers || []);
+    setTopStocks(data.topStocks || []);
+    setMarketBreadth(data.marketBreadth || null);
+    setLastUpdated(new Date());
+    setLoading(false);
+  };
 
+  // --- REST fallback fetch ---
+  const refreshData = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/market");
-      if (!response.ok) throw new Error(`Network error: ${response.status}`);
-
-      const data = await response.json();
-
-      setIndices(data.indices || []);
-      setTopGainers(data.topGainers || []);
-      setTopLosers(data.topLosers || []);
-      setTopStocks([...(data.topGainers || []), ...(data.topLosers || [])]);
-      setLastUpdated(new Date());
-    } catch (err: any) {
-      console.error("Failed to fetch market data:", err);
-      setError(err.message);
-    } finally {
+      setLoading(true);
+      const res = await fetch("http://localhost:5001/api-market");
+      if (!res.ok) throw new Error("API request failed");
+      const data = await res.json();
+      updateData(data);
+      setError(null);
+    } catch (err) {
+      setError("Failed to fetch market data via REST.");
       setLoading(false);
     }
-  }, [indices.length]);
+  }, []);
 
+  // --- WebSocket + fallback ---
   useEffect(() => {
-    fetchData(); // initial load
+  let ws: WebSocket | null = null;
+  let reconnectTimer: any = null;
+  let isUnmounted = false;
 
+  const connect = () => {
+    if (isUnmounted) return;
+    try {
+      ws = new WebSocket("ws://localhost:5000");
+      ws.onopen = () => {
+        console.log("WebSocket connected");
+        // do NOT setLoading(true) here repeatedly — avoid toggling loading on open
+        setError(null);
+      };
+      ws.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          updateData(data); // your function to set indices, topGainers, etc.
+        } catch (err) {
+          console.error("WS parse error", err);
+        }
+      };
+      ws.onclose = () => {
+        console.warn("WebSocket closed — will try reconnect in 5s");
+        if (!isUnmounted) reconnectTimer = setTimeout(connect, 5000);
+      };
+      ws.onerror = (err) => {
+        console.error("WebSocket error", err);
+        try { ws?.close(); } catch {}
+      };
+    } catch (err) {
+      console.error("WS connect failed", err);
+      if (!isUnmounted) reconnectTimer = setTimeout(connect, 5000);
+    }
+  };
+
+  connect();
+
+  return () => {
+    isUnmounted = true;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    try { ws?.close(); } catch {}
+  };
+}, []); // <- IMPORTANT: empty deps so this runs once on mount
+
+
+  // --- Market open checker ---
+  useEffect(() => {
+    const getIsMarketOpen = (): boolean => {
+      const now = new Date();
+      const day = now.getDay();
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      const isWeekday = day >= 1 && day <= 5;
+      const isDuringMarketHours =
+        (hour > 9 || (hour === 9 && minute >= 15)) &&
+        (hour < 15 || (hour === 15 && minute < 30));
+      return isWeekday && isDuringMarketHours;
+    };
+
+    setIsMarketOpen(getIsMarketOpen());
     const interval = setInterval(() => {
-      const marketIsOpen = getIsMarketOpen();
-      if (marketIsOpen && !isMarketOpen) {
-        fetchData(); // market just opened
-      }
-      setIsMarketOpen(marketIsOpen);
-      if (marketIsOpen) fetchData();
-    }, 5 * 60 * 1000);
+      setIsMarketOpen(getIsMarketOpen());
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [fetchData, isMarketOpen]);
-
-  const refreshData = () => {
-    fetchData();
-  };
+  }, []);
 
   const value: DataContextType = {
     indices,
     topGainers,
     topLosers,
     topStocks,
+    marketBreadth,
     isMarketOpen,
     lastUpdated,
     loading,
